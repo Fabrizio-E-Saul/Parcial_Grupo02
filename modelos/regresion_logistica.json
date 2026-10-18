@@ -1,0 +1,159 @@
+{
+  "version": "regresion_logistica",
+  "fecha_utc": "2026-10-15T21:00:21+00:00",
+  "artefacto": "regresion_logistica.joblib",
+  "entorno": {
+    "python": "3.12.3",
+    "scikit_learn": "1.8.0",
+    "numpy": "2.4.4"
+  },
+  "descripcion": "regresion_logistica",
+  "datos": {
+    "archivo": "data/Rice_Cammeo_Osmancik.arff",
+    "sha256": "1af97883100c89de2ea2972f7a28d428f4f1c14711a61defc0b0569e9eb65665",
+    "calidad": {
+      "filas_iniciales": 3810,
+      "nulos": 0,
+      "duplicados": 0,
+      "incoherentes": 0,
+      "clases_invalidas": 0,
+      "filas_finales": 3810,
+      "distribucion_clases": {
+        "Osmancik": 2180,
+        "Cammeo": 1630
+      }
+    },
+    "semilla_particion": 42,
+    "filas": {
+      "entrenamiento": 2286,
+      "validacion": 762,
+      "prueba": 762
+    }
+  },
+  "parametros": {
+    "C": 1.0,
+    "max_iter": 1000
+  },
+  "preprocesamiento": "StandardScaler ajustado solo con entrenamiento (dentro del Pipeline)",
+  "umbral_decision": 0.49,
+  "costos_supuestos": {
+    "falso_negativo": 2.0,
+    "falso_positivo": 1.0,
+    "nota": "Supuesto del escenario; no son precios reales."
+  },
+  "rangos_entrada_entrenamiento": {
+    "Area": [
+      7551.0,
+      18313.0
+    ],
+    "Perimeter": [
+      359.1000061035156,
+      548.4459838867188
+    ],
+    "Major_Axis_Length": [
+      145.26446533203125,
+      239.010498046875
+    ],
+    "Minor_Axis_Length": [
+      59.532405853271484,
+      106.33782196044922
+    ],
+    "Eccentricity": [
+      0.7772325873374939,
+      0.9450585842132568
+    ],
+    "Convex_Area": [
+      7723.0,
+      18724.0
+    ],
+    "Extent": [
+      0.49741286039352417,
+      0.8396612405776978
+    ]
+  },
+  "cortes_area_terciles": [
+    11741.333333333334,
+    13388.333333333332
+  ],
+  "metricas_validacion": {
+    "umbral": 0.49,
+    "accuracy": 0.9383202099737533,
+    "balanced_accuracy": 0.9391357573028649,
+    "precision_cammeo": 0.913946587537092,
+    "recall_cammeo": 0.9447852760736196,
+    "f1_cammeo": 0.9291101055806938,
+    "f1_macro": 0.9372612084233318,
+    "roc_auc": 0.9814051331119491,
+    "pr_auc": 0.977047879675805,
+    "brier": 0.05156815466809191,
+    "costo_por_grano": 0.08530183727034121,
+    "matriz": {
+      "tn": 407,
+      "fp": 29,
+      "fn": 18,
+      "tp": 308
+    },
+    "metricas_umbral_0.5": {
+      "accuracy": 0.9343832020997376,
+      "recall_cammeo": 0.9355828220858896,
+      "f1_macro": 0.9331860269360269
+    }
+  },
+  "variabilidad": {
+    "cv_entrenamiento": {
+      "f1_macro_media": 0.9297731978890373,
+      "f1_macro_desv": 0.0102054769987333,
+      "accuracy_media": 0.9313263833812696,
+      "accuracy_desv": 0.009963437123037796,
+      "n_particiones": 10
+    },
+    "semillas_validacion": null
+  },
+  "semilla": 42,
+  "promovible": true,
+  "metricas_prueba": {
+    "umbral": 0.49,
+    "accuracy": 0.9225721784776902,
+    "balanced_accuracy": 0.9234395227106433,
+    "precision_cammeo": 0.8938053097345132,
+    "recall_cammeo": 0.9294478527607362,
+    "f1_cammeo": 0.9112781954887218,
+    "f1_macro": 0.9212968393043144,
+    "roc_auc": 0.9760722125288456,
+    "pr_auc": 0.9683631681057578,
+    "brier": 0.05786660321283961,
+    "costo_por_grano": 0.10761154855643044,
+    "matriz": {
+      "tn": 400,
+      "fp": 36,
+      "fn": 23,
+      "tp": 303
+    }
+  },
+  "errores_por_grupo_prueba": {
+    "por_clase": {
+      "Osmancik": {
+        "n": 436,
+        "tasa_error": 0.08256880733944955
+      },
+      "Cammeo": {
+        "n": 326,
+        "tasa_error": 0.0705521472392638
+      }
+    },
+    "por_tamano": {
+      "pequeño": {
+        "n": 267,
+        "tasa_error": 0.0299625468164794
+      },
+      "mediano": {
+        "n": 235,
+        "tasa_error": 0.16595744680851063
+      },
+      "grande": {
+        "n": 260,
+        "tasa_error": 0.046153846153846156
+      }
+    }
+  }
+}
