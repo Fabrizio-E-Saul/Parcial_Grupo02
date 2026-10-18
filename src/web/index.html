@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistente de acopio de arroz</title>
+<style>
+  :root {
+    --fondo: #f3f1e8; --fondo2: #e6efe3; --tarjeta: #ffffff; --texto: #1f2a24; --suave: #5d6b63;
+    --borde: #d9dfd6; --verde: #2f7d4f; --verde-osc: #225c3a; --verde-cl: #e3f2e8;
+    --cammeo: #c4572b; --cammeo-cl: #fbe6dc; --osmancik: #2a6f97; --osmancik-cl: #dcecf6;
+    --burbuja-bot: #eef3ec; --burbuja-user: #2f7d4f; --aviso: #b9770e; --aviso-cl: #fdf1d6; --error: #b03a2e; --error-cl: #fbe3e0;
+    --sombra: 0 6px 24px rgba(31, 42, 36, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #141a16; --fondo2: #18221b; --tarjeta: #1e2822; --texto: #e8efe9; --suave: #9fb0a5;
+      --borde: #32413a; --verde: #4caf75; --verde-osc: #3a9461; --verde-cl: #213a2b;
+      --cammeo: #ee8a5e; --cammeo-cl: #3b2a22; --osmancik: #6bb4de; --osmancik-cl: #1f3341;
+      --burbuja-bot: #27332c; --burbuja-user: #2f7d4f; --aviso: #e0a940; --aviso-cl: #3a3220; --error: #ef7a6e; --error-cl: #3b2523;
+      --sombra: 0 6px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--texto);
+    background: linear-gradient(160deg, var(--fondo) 0%, var(--fondo2) 100%) fixed; min-height: 100vh;
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  }
+  .app { max-width: 920px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 14px; margin: 6px 0 14px; flex-wrap: wrap; }
+  .logo { width: 52px; height: 52px; border-radius: 16px; background: var(--verde); display: grid; place-items: center; box-shadow: var(--sombra); }
+  h1 { font-size: 1.35rem; margin: 0; line-height: 1.2; }
+  .sub { color: var(--suave); font-size: .9rem; margin-top: 2px; }
+  .pill { margin-left: auto; font-size: .8rem; padding: 6px 12px; border-radius: 999px; background: var(--tarjeta); border: 1px solid var(--borde); display: flex; align-items: center; gap: 7px; }
+  .punto { width: 9px; height: 9px; border-radius: 50%; background: #999; }
+  .punto.ok { background: #2ecc71; box-shadow: 0 0 0 4px rgba(46, 204, 113, .2); }
+  .punto.mal { background: var(--error); }
+
+  .tabs { display: flex; gap: 6px; background: var(--tarjeta); border: 1px solid var(--borde); padding: 5px; border-radius: 14px; width: fit-content; margin-bottom: 12px; box-shadow: var(--sombra); }
+  .tab { border: 0; background: transparent; color: var(--suave); padding: 9px 18px; border-radius: 10px; font-size: .95rem; cursor: pointer; font-weight: 600; }
+  .tab[aria-selected="true"] { background: var(--verde); color: #fff; }
+  .tab:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--osmancik); outline-offset: 2px; }
+
+  .panel { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 20px; box-shadow: var(--sombra); overflow: hidden; }
+  .oculto { display: none !important; }
+
+  /* ---------- chat ---------- */
+  .progreso { padding: 12px 18px 10px; border-bottom: 1px solid var(--borde); display: flex; align-items: center; gap: 12px; font-size: .85rem; color: var(--suave); }
+  .barra { flex: 1; height: 8px; border-radius: 99px; background: var(--borde); overflow: hidden; }
+  .barra > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--verde), #8bc34a); border-radius: 99px; transition: width .4s ease; }
+  #mensajes { height: min(58vh, 520px); overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+  .fila { display: flex; gap: 8px; align-items: flex-end; animation: entra .25s ease; }
+  .fila.user { justify-content: flex-end; }
+  @keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--verde-cl); display: grid; place-items: center; flex: none; font-size: 16px; }
+  .burbuja { max-width: min(78%, 560px); padding: 10px 14px; border-radius: 16px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; font-size: .95rem; }
+  .bot .burbuja { background: var(--burbuja-bot); border-bottom-left-radius: 4px; }
+  .user .burbuja { background: var(--burbuja-user); color: #fff; border-bottom-right-radius: 4px; }
+  .escribiendo { display: inline-flex; gap: 4px; padding: 4px 2px; }
+  .escribiendo i { width: 7px; height: 7px; background: var(--suave); border-radius: 50%; animation: salto 1s infinite ease-in-out; }
+  .escribiendo i:nth-child(2) { animation-delay: .15s; } .escribiendo i:nth-child(3) { animation-delay: .3s; }
+  @keyframes salto { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-5px); opacity: 1; } }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 18px 12px; min-height: 8px; }
+  .chip { border: 1.5px solid var(--verde); color: var(--verde); background: transparent; border-radius: 999px; padding: 7px 15px; font-size: .88rem; cursor: pointer; font-weight: 600; transition: all .15s; }
+  .chip:hover { background: var(--verde); color: #fff; }
+  .entrada { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--borde); background: var(--tarjeta); }
+  .entrada input { flex: 1; font-size: 1rem; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--borde); background: var(--fondo); color: var(--texto); min-width: 0; }
+  .btn { border: 0; background: var(--verde); color: #fff; border-radius: 12px; padding: 0 20px; font-weight: 700; font-size: .95rem; cursor: pointer; min-height: 44px; transition: background .15s, transform .05s; }
+  .btn:hover { background: var(--verde-osc); } .btn:active { transform: scale(.97); } .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.sec { background: transparent; color: var(--verde); border: 1.5px solid var(--verde); }
+  .btn.sec:hover { background: var(--verde-cl); }
+
+  /* ---------- tarjeta de resultado ---------- */
+  .resultado { border-radius: 16px; padding: 16px; border: 1.5px solid; width: min(100%, 460px); animation: entra .35s ease; }
+  .resultado.cammeo { background: var(--cammeo-cl); border-color: var(--cammeo); }
+  .resultado.osmancik { background: var(--osmancik-cl); border-color: var(--osmancik); }
+  .resultado .etq { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); }
+  .resultado .nombre { font-size: 1.7rem; font-weight: 800; margin: 2px 0 8px; }
+  .resultado.cammeo .nombre { color: var(--cammeo); } .resultado.osmancik .nombre { color: var(--osmancik); }
+  .medidor { position: relative; height: 14px; border-radius: 99px; background: linear-gradient(90deg, var(--osmancik) 0%, var(--borde) 50%, var(--cammeo) 100%); margin: 14px 0 6px; }
+  .medidor .aguja { position: absolute; top: -5px; width: 6px; height: 24px; border-radius: 4px; background: var(--texto); transform: translateX(-50%); transition: left .8s cubic-bezier(.2, .9, .3, 1); left: 50%; }
+  .medidor .umbral { position: absolute; top: -2px; width: 2px; height: 18px; background: var(--texto); opacity: .35; }
+  .escala { display: flex; justify-content: space-between; font-size: .75rem; color: var(--suave); }
+  .insignia { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; margin-top: 10px; }
+  .insignia.alta { background: var(--verde-cl); color: var(--verde); } .insignia.baja { background: var(--aviso-cl); color: var(--aviso); }
+  .grano-svg { display: block; margin: 6px auto 0; }
+
+  /* ---------- formulario ---------- */
+  .form { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 760px) { .form { grid-template-columns: 1fr; } .burbuja { max-width: 88%; } }
+  .campo { margin-bottom: 14px; }
+  .campo label { display: flex; justify-content: space-between; font-weight: 650; font-size: .9rem; margin-bottom: 2px; }
+  .campo small { color: var(--suave); display: block; margin-bottom: 5px; font-weight: 400; }
+  .campo .par { display: grid; grid-template-columns: 1fr 108px; gap: 10px; align-items: center; }
+  input[type=range] { width: 100%; accent-color: var(--verde); }
+  input[type=number] { padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--borde); background: var(--fondo); color: var(--texto); font-size: .95rem; width: 100%; }
+  .campo.malo input[type=number] { border-color: var(--error); }
+  .ejemplos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .acciones { display: flex; gap: 10px; margin-top: 6px; }
+  .lado { display: flex; flex-direction: column; gap: 14px; min-height: 320px; justify-content: center; }
+  .vacio { text-align: center; color: var(--suave); padding: 30px 14px; border: 2px dashed var(--borde); border-radius: 16px; }
+  .errores { background: var(--error-cl); border: 1.5px solid var(--error); color: var(--error); padding: 12px 14px; border-radius: 14px; font-size: .9rem; }
+  .errores ul { margin: 6px 0 0; padding-left: 18px; }
+  footer { text-align: center; color: var(--suave); font-size: .8rem; margin: 16px 6px 4px; line-height: 1.5; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg width="34" height="34" viewBox="0 0 34 34"><ellipse cx="17" cy="17" rx="14" ry="6.5" transform="rotate(-35 17 17)" fill="#fff"/><ellipse cx="17" cy="17" rx="14" ry="6.5" transform="rotate(35 17 17)" fill="#ffffffaa"/></svg>
+    </div>
+    <div>
+      <h1>Asistente de acopio de arroz</h1>
+      <div class="sub">¿Cammeo u Osmancik? Dime las medidas del grano y te lo estimo.</div>
+    </div>
+    <div class="pill" id="estado-api" role="status"><span class="punto" id="punto"></span><span id="texto-api">Conectando…</span></div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-chat" aria-selected="true" aria-controls="panel-chat">💬 Asistente (chat)</button>
+    <button class="tab" role="tab" id="tab-form" aria-selected="false" aria-controls="panel-form">🎚️ Formulario rápido</button>
+  </div>
+
+  <!-- ===== CHAT ===== -->
+  <section class="panel" id="panel-chat" role="tabpanel">
+    <div class="progreso"><span id="prog-texto">Medidas 0/6</span><div class="barra"><i id="prog-barra"></i></div>
+      <button class="btn sec" id="btn-nuevo" style="min-height:34px;padding:0 14px;font-size:.82rem">Nueva consulta</button></div>
+    <div id="mensajes" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="entrada" id="form-chat" autocomplete="off">
+      <input id="texto" type="text" placeholder="Escribe aquí tu respuesta…" aria-label="Mensaje" maxlength="300">
+      <button class="btn" id="enviar" type="submit">Enviar</button>
+    </form>
+  </section>
+
+  <!-- ===== FORMULARIO ===== -->
+  <section class="panel oculto" id="panel-form" role="tabpanel">
+    <div class="form">
+      <div>
+        <div class="ejemplos">
+          <button class="btn sec" type="button" id="ej-cammeo">🌾 Ejemplo Cammeo</button>
+          <button class="btn sec" type="button" id="ej-osmancik">🌾 Ejemplo Osmancik</button>
+        </div>
+        <div id="campos"></div>
+        <div class="acciones"><button class="btn" id="clasificar" type="button" style="padding:0 26px">Clasificar grano</button>
+          <button class="btn sec" id="limpiar" type="button">Limpiar</button></div>
+      </div>
+      <div class="lado" id="lado-resultado">
+        <div class="vacio">Mueve los deslizadores o elige un ejemplo y pulsa <b>Clasificar grano</b>.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Es una estimación basada solo en la forma del grano; no reemplaza un análisis de laboratorio.<br>
+    No se guardan tus medidas: solo se usan para esta consulta. <span id="desempeno"></span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const CAMPOS = [
+  { k: "Area", n: "Área", ayuda: "píxeles que ocupa el grano", paso: 10, ej: [15500, 10500] },
+  { k: "Perimeter", n: "Perímetro", ayuda: "largo del contorno (px)", paso: 1, ej: [520, 410] },
+  { k: "Major_Axis_Length", n: "Largo (eje mayor)", ayuda: "distancia más larga (px)", paso: 0.5, ej: [225, 165] },
+  { k: "Minor_Axis_Length", n: "Ancho (eje menor)", ayuda: "distancia más corta (px)", paso: 0.5, ej: [88, 82] },
+  { k: "Convex_Area", n: "Área convexa", ayuda: "área del contorno 'estirado' (px)", paso: 10, ej: [15900, 10700] },
+  { k: "Extent", n: "Razón de ocupación", ayuda: "entre 0 y 1: grano / rectángulo que lo encierra", paso: 0.01, ej: [0.62, 0.70] },
+];
+let rangos = null, sesion = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()).replace(/-/g, "");
+
+/* ---------- utilidades ---------- */
+async function pedir(url, opciones) {
+  const r = await fetch(url, opciones);
+  let datos = {};
+  try { datos = await r.json(); } catch (e) { /* respuesta vacía */ }
+  return { ok: r.ok, status: r.status, datos };
+}
+const post = (url, cuerpo) => pedir(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+function el(tag, clase, texto) { const e = document.createElement(tag); if (clase) e.className = clase; if (texto !== undefined) e.textContent = texto; return e; }
+
+/* ---------- estado de la API ---------- */
+async function estadoApi() {
+  try {
+    const s = await pedir("/salud");
+    if (!s.ok) throw new Error("salud");
+    $("punto").className = "punto ok";
+    $("texto-api").textContent = "API activa · " + s.datos.version;
+    const i = await pedir("/info");
+    if (i.ok) {
+      rangos = i.datos.entrada.rangos_entrenamiento;
+      $("desempeno").textContent = "En nuestras pruebas acierta cerca de " + Math.round(i.datos.desempeno.accuracy_validacion * 100) + " de cada 100 granos.";
+      construirCampos();
+    }
+  } catch (e) {
+    $("punto").className = "punto mal"; $("texto-api").textContent = "Sin conexión con la API";
+  }
+}
+
+/* ---------- tarjeta de resultado (se usa en chat y formulario) ---------- */
+function tarjetaResultado(r, dims) {
+  const clase = r.clase.toLowerCase();
+  const c = el("div", "resultado " + clase);
+  c.appendChild(el("div", "etq", "Resultado"));
+  c.appendChild(el("div", "nombre", "Arroz " + r.clase));
+  c.appendChild(el("div", "", "Seguridad estimada: " + Math.round(r.probabilidad * 100) + " %"));
+  const m = el("div", "medidor"); const aguja = el("div", "aguja"); const um = el("div", "umbral");
+  um.style.left = (r.umbral * 100) + "%"; m.appendChild(um); m.appendChild(aguja); c.appendChild(m);
+  const esc = el("div", "escala"); esc.appendChild(el("span", "", "Osmancik")); esc.appendChild(el("span", "", "Cammeo")); c.appendChild(esc);
+  requestAnimationFrame(() => requestAnimationFrame(() => { aguja.style.left = (r.probabilidad_cammeo * 100) + "%"; }));
+  c.appendChild(el("span", "insignia " + r.confianza, r.confianza === "alta" ? "Confianza alta" : "Confianza baja: conviene revisar"));
+  if (dims) c.appendChild(granoSvg(dims, clase));
+  return c;
+}
+function granoSvg(d, clase) {
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+  const ratio = Math.min(Math.max(d.mayor / d.menor, 1), 4), w = 150, h = Math.max(150 / ratio, 22);
+  svg.setAttribute("viewBox", "0 0 170 " + (h + 24)); svg.setAttribute("width", "170"); svg.setAttribute("class", "grano-svg");
+  const e = document.createElementNS(ns, "ellipse");
+  e.setAttribute("cx", 85); e.setAttribute("cy", (h + 24) / 2); e.setAttribute("rx", w / 2); e.setAttribute("ry", h / 2);
+  e.setAttribute("fill", getComputedStyle(document.documentElement).getPropertyValue(clase === "cammeo" ? "--cammeo" : "--osmancik")); e.setAttribute("opacity", ".75");
+  svg.appendChild(e);
+  const t = document.createElementNS(ns, "text"); t.setAttribute("x", 85); t.setAttribute("y", (h + 24) / 2 + 4); t.setAttribute("text-anchor", "middle");
+  t.setAttribute("font-size", "11"); t.setAttribute("fill", "#fff"); t.textContent = "largo / ancho = " + ratio.toFixed(2); svg.appendChild(t);
+  return svg;
+}
+
+/* ================= CHAT ================= */
+function burbuja(texto, quien) {
+  const fila = el("div", "fila " + quien);
+  if (quien === "bot") fila.appendChild(el("div", "avatar", "🌾"));
+  fila.appendChild(el("div", "burbuja", texto));
+  $("mensajes").appendChild(fila); bajar(); return fila;
+}
+function bajar() { const m = $("mensajes"); m.scrollTop = m.scrollHeight; }
+function escribiendo(on) {
+  const previo = $("escribiendo-fila"); if (previo) previo.remove();
+  if (!on) return;
+  const fila = el("div", "fila bot"); fila.id = "escribiendo-fila"; fila.appendChild(el("div", "avatar", "🌾"));
+  const b = el("div", "burbuja"); const p = el("span", "escribiendo"); p.append(el("i"), el("i"), el("i")); b.appendChild(p); fila.appendChild(b);
+  $("mensajes").appendChild(fila); bajar();
+}
+function pintarChips(lista, terminado) {
+  const c = $("chips"); c.textContent = "";
+  (lista || []).forEach((t) => {
+    const b = el("button", "chip", t); b.type = "button";
+    b.addEventListener("click", () => enviar(t === "Nueva consulta" ? "__nuevo__" : t, t));
+    c.appendChild(b);
+  });
+  $("texto").disabled = !!terminado; $("enviar").disabled = !!terminado;
+  if (!terminado) $("texto").focus({ preventScroll: true });
+}
+function pintarProgreso(p, estado) {
+  const act = estado === "OTRO" ? p.total : p.actual;
+  $("prog-texto").textContent = "Medidas " + act + "/" + p.total;
+  $("prog-barra").style.width = (act / p.total * 100) + "%";
+}
+async function enviar(mensaje, visible) {
+  if (mensaje !== "__nuevo__") burbuja(visible || mensaje, "user"); else $("mensajes").textContent = "";
+  $("texto").value = ""; $("chips").textContent = ""; escribiendo(true);
+  const t0 = Date.now();
+  let r;
+  try { r = await post("/chat", { sesion: sesion, mensaje: mensaje }); }
+  catch (e) { escribiendo(false); burbuja("No pude conectarme con el servidor. Revisa que la API esté encendida.", "bot"); return; }
+  const espera = Math.max(0, 450 - (Date.now() - t0)); await new Promise((ok) => setTimeout(ok, espera));
+  escribiendo(false);
+  if (!r.ok) { burbuja((r.datos && r.datos.error) || "Ocurrió un error inesperado.", "bot"); return; }
+  const d = r.datos; sesion = d.sesion;
+  burbuja(d.respuesta, "bot");
+  if (d.resultado) { const f = el("div", "fila bot"); f.appendChild(el("div", "avatar", "")); f.appendChild(tarjetaResultado(d.resultado)); $("mensajes").appendChild(f); bajar(); }
+  pintarProgreso(d.progreso, d.estado); pintarChips(d.sugerencias, d.terminado);
+}
+$("form-chat").addEventListener("submit", (ev) => { ev.preventDefault(); const t = $("texto").value.trim(); if (t) enviar(t); });
+$("btn-nuevo").addEventListener("click", () => enviar("__nuevo__"));
+
+/* ================= FORMULARIO ================= */
+const valores = {};
+function construirCampos() {
+  const cont = $("campos"); cont.textContent = "";
+  CAMPOS.forEach((c) => {
+    const lo = rangos[c.k][0], hi = rangos[c.k][1];
+    const caja = el("div", "campo"); caja.id = "campo-" + c.k;
+    const lab = el("label"); lab.appendChild(el("span", "", c.n)); caja.appendChild(lab);
+    caja.appendChild(el("small", "", c.ayuda));
+    const par = el("div", "par");
+    const rango = el("input"); rango.type = "range"; rango.min = lo; rango.max = hi; rango.step = c.paso; rango.setAttribute("aria-label", c.n);
+    const num = el("input"); num.type = "number"; num.step = "any"; num.setAttribute("aria-label", c.n + " (valor)");
+    const medio = c.k === "Extent" ? (lo + hi) / 2 : Math.round((lo + hi) / 2); rango.value = medio; num.value = medio; valores[c.k] = medio;
+    rango.addEventListener("input", () => { num.value = rango.value; valores[c.k] = parseFloat(rango.value); caja.classList.remove("malo"); });
+    num.addEventListener("input", () => { rango.value = num.value; valores[c.k] = parseFloat(num.value); caja.classList.remove("malo"); });
+    par.append(rango, num); caja.appendChild(par); cont.appendChild(caja);
+  });
+}
+function poner(indice) {
+  CAMPOS.forEach((c) => {
+    const caja = $("campo-" + c.k); if (!caja) return;
+    const v = c.ej[indice]; valores[c.k] = v;
+    caja.querySelectorAll("input").forEach((i) => { i.value = v; }); caja.classList.remove("malo");
+  });
+  clasificar();
+}
+async function clasificar() {
+  const lado = $("lado-resultado"); lado.textContent = "";
+  document.querySelectorAll(".campo").forEach((c) => c.classList.remove("malo"));
+  const r = await post("/predecir", valores);
+  if (r.ok) { lado.appendChild(tarjetaResultado(r.datos, { mayor: valores.Major_Axis_Length, menor: valores.Minor_Axis_Length })); return; }
+  const caja = el("div", "errores"); caja.appendChild(el("b", "", "Revisa las medidas:"));
+  const ul = el("ul"); (r.datos.detalles || [r.datos.error || "Error inesperado."]).forEach((m) => {
+    ul.appendChild(el("li", "", m));
+    (m.match(/'(\w+)'/g) || []).forEach((q) => { const c = $("campo-" + q.replace(/'/g, "")); if (c) c.classList.add("malo"); });
+  });
+  caja.appendChild(ul); lado.appendChild(caja);
+}
+$("clasificar").addEventListener("click", clasificar);
+$("ej-cammeo").addEventListener("click", () => poner(0));
+$("ej-osmancik").addEventListener("click", () => poner(1));
+$("limpiar").addEventListener("click", () => { construirCampos(); $("lado-resultado").innerHTML = '<div class="vacio">Mueve los deslizadores o elige un ejemplo y pulsa <b>Clasificar grano</b>.</div>'; });
+
+/* ================= pestañas ================= */
+function pestana(cual) {
+  const chat = cual === "chat";
+  $("panel-chat").classList.toggle("oculto", !chat); $("panel-form").classList.toggle("oculto", chat);
+  $("tab-chat").setAttribute("aria-selected", chat); $("tab-form").setAttribute("aria-selected", !chat);
+}
+$("tab-chat").addEventListener("click", () => pestana("chat"));
+$("tab-form").addEventListener("click", () => pestana("form"));
+
+estadoApi();
+enviar("__nuevo__");
+</script>
+</body>
+</html>
