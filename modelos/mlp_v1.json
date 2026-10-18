@@ -1,0 +1,134 @@
+{
+  "version": "mlp_v1",
+  "fecha_utc": "2026-10-15T21:00:21+00:00",
+  "artefacto": "mlp_v1.joblib",
+  "entorno": {
+    "python": "3.12.3",
+    "scikit_learn": "1.8.0",
+    "numpy": "2.4.4"
+  },
+  "descripcion": "mlp_v1",
+  "datos": {
+    "archivo": "data/Rice_Cammeo_Osmancik.arff",
+    "sha256": "1af97883100c89de2ea2972f7a28d428f4f1c14711a61defc0b0569e9eb65665",
+    "calidad": {
+      "filas_iniciales": 3810,
+      "nulos": 0,
+      "duplicados": 0,
+      "incoherentes": 0,
+      "clases_invalidas": 0,
+      "filas_finales": 3810,
+      "distribucion_clases": {
+        "Osmancik": 2180,
+        "Cammeo": 1630
+      }
+    },
+    "semilla_particion": 42,
+    "filas": {
+      "entrenamiento": 2286,
+      "validacion": 762,
+      "prueba": 762
+    }
+  },
+  "parametros": {
+    "hidden_layer_sizes": [
+      16
+    ],
+    "activation": "relu",
+    "alpha": 0.001,
+    "learning_rate_init": 0.001,
+    "batch_size": 64,
+    "max_iter": 500,
+    "early_stopping": true,
+    "validation_fraction": 0.15,
+    "n_iter_no_change": 15,
+    "random_state": 42
+  },
+  "preprocesamiento": "StandardScaler ajustado solo con entrenamiento (dentro del Pipeline)",
+  "umbral_decision": 0.42,
+  "costos_supuestos": {
+    "falso_negativo": 2.0,
+    "falso_positivo": 1.0,
+    "nota": "Supuesto del escenario; no son precios reales."
+  },
+  "rangos_entrada_entrenamiento": {
+    "Area": [
+      7551.0,
+      18313.0
+    ],
+    "Perimeter": [
+      359.1000061035156,
+      548.4459838867188
+    ],
+    "Major_Axis_Length": [
+      145.26446533203125,
+      239.010498046875
+    ],
+    "Minor_Axis_Length": [
+      59.532405853271484,
+      106.33782196044922
+    ],
+    "Eccentricity": [
+      0.7772325873374939,
+      0.9450585842132568
+    ],
+    "Convex_Area": [
+      7723.0,
+      18724.0
+    ],
+    "Extent": [
+      0.49741286039352417,
+      0.8396612405776978
+    ]
+  },
+  "cortes_area_terciles": [
+    11741.333333333334,
+    13388.333333333332
+  ],
+  "metricas_validacion": {
+    "umbral": 0.42,
+    "accuracy": 0.9291338582677166,
+    "balanced_accuracy": 0.9314951877075477,
+    "precision_cammeo": 0.8930635838150289,
+    "recall_cammeo": 0.9478527607361963,
+    "f1_cammeo": 0.9196428571428571,
+    "f1_macro": 0.9281312877263581,
+    "roc_auc": 0.9800683852085326,
+    "pr_auc": 0.9752597488772259,
+    "brier": 0.05889944112521981,
+    "costo_por_grano": 0.09317585301837271,
+    "matriz": {
+      "tn": 399,
+      "fp": 37,
+      "fn": 17,
+      "tp": 309
+    },
+    "metricas_umbral_0.5": {
+      "accuracy": 0.9304461942257218,
+      "recall_cammeo": 0.9233128834355828,
+      "f1_macro": 0.9290471630987622
+    }
+  },
+  "variabilidad": {
+    "cv_entrenamiento": {
+      "f1_macro_media": 0.9246564317373039,
+      "f1_macro_desv": 0.010339351557065108,
+      "accuracy_media": 0.9265123790049019,
+      "accuracy_desv": 0.010035553390696086,
+      "n_particiones": 10
+    },
+    "semillas_validacion": {
+      "f1_macro_media": 0.9227519224346148,
+      "f1_macro_desv": 0.005426650233604113,
+      "semillas": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  },
+  "semilla": 42,
+  "promovible": true
+}
