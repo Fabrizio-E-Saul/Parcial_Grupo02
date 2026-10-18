@@ -1,0 +1,7 @@
+{
+  "version": "regresion_logistica",
+  "fecha_utc": "2026-10-15T21:00:21+00:00",
+  "motivo": "mejor costo en validación = 0.0853; empatados (<= +0.01): regresion_logistica, mlp_v1, mlp_v2; se elige el más simple: regresion_logistica",
+  "artefacto": "regresion_logistica.joblib",
+  "ficha": "regresion_logistica.json"
+}
