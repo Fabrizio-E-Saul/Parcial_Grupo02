@@ -1,0 +1,23 @@
+{
+  "version": "regresion_logistica",
+  "fecha_utc": "2026-10-15T21:00:21+00:00",
+  "metricas": {
+    "umbral": 0.49,
+    "accuracy": 0.9225721784776902,
+    "balanced_accuracy": 0.9234395227106433,
+    "precision_cammeo": 0.8938053097345132,
+    "recall_cammeo": 0.9294478527607362,
+    "f1_cammeo": 0.9112781954887218,
+    "f1_macro": 0.9212968393043144,
+    "roc_auc": 0.9760722125288456,
+    "pr_auc": 0.9683631681057578,
+    "brier": 0.05786660321283961,
+    "costo_por_grano": 0.10761154855643044,
+    "matriz": {
+      "tn": 400,
+      "fp": 36,
+      "fn": 23,
+      "tp": 303
+    }
+  }
+}
