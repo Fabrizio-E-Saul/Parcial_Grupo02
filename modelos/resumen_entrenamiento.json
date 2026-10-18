@@ -1,0 +1,295 @@
+{
+  "ganadora": "regresion_logistica",
+  "motivo": "mejor costo en validación = 0.0853; empatados (<= +0.01): regresion_logistica, mlp_v1, mlp_v2; se elige el más simple: regresion_logistica",
+  "validacion": {
+    "baseline_trivial": {
+      "umbral": 0.05,
+      "accuracy": 0.42782152230971127,
+      "balanced_accuracy": 0.5,
+      "precision_cammeo": 0.42782152230971127,
+      "recall_cammeo": 1.0,
+      "f1_cammeo": 0.5992647058823529,
+      "f1_macro": 0.29963235294117646,
+      "roc_auc": 0.5,
+      "pr_auc": 0.42782152230971127,
+      "brier": 0.24479026735831252,
+      "costo_por_grano": 0.5721784776902887,
+      "matriz": {
+        "tn": 0,
+        "fp": 436,
+        "fn": 0,
+        "tp": 326
+      },
+      "metricas_umbral_0.5": {
+        "accuracy": 0.5721784776902887,
+        "recall_cammeo": 0.0,
+        "f1_macro": 0.3639398998330551
+      }
+    },
+    "regresion_logistica": {
+      "umbral": 0.49,
+      "accuracy": 0.9383202099737533,
+      "balanced_accuracy": 0.9391357573028649,
+      "precision_cammeo": 0.913946587537092,
+      "recall_cammeo": 0.9447852760736196,
+      "f1_cammeo": 0.9291101055806938,
+      "f1_macro": 0.9372612084233318,
+      "roc_auc": 0.9814051331119491,
+      "pr_auc": 0.977047879675805,
+      "brier": 0.05156815466809191,
+      "costo_por_grano": 0.08530183727034121,
+      "matriz": {
+        "tn": 407,
+        "fp": 29,
+        "fn": 18,
+        "tp": 308
+      },
+      "metricas_umbral_0.5": {
+        "accuracy": 0.9343832020997376,
+        "recall_cammeo": 0.9355828220858896,
+        "f1_macro": 0.9331860269360269
+      }
+    },
+    "mlp_v1": {
+      "umbral": 0.42,
+      "accuracy": 0.9291338582677166,
+      "balanced_accuracy": 0.9314951877075477,
+      "precision_cammeo": 0.8930635838150289,
+      "recall_cammeo": 0.9478527607361963,
+      "f1_cammeo": 0.9196428571428571,
+      "f1_macro": 0.9281312877263581,
+      "roc_auc": 0.9800683852085326,
+      "pr_auc": 0.9752597488772259,
+      "brier": 0.05889944112521981,
+      "costo_por_grano": 0.09317585301837271,
+      "matriz": {
+        "tn": 399,
+        "fp": 37,
+        "fn": 17,
+        "tp": 309
+      },
+      "metricas_umbral_0.5": {
+        "accuracy": 0.9304461942257218,
+        "recall_cammeo": 0.9233128834355828,
+        "f1_macro": 0.9290471630987622
+      }
+    },
+    "mlp_v2": {
+      "umbral": 0.35,
+      "accuracy": 0.926509186351706,
+      "balanced_accuracy": 0.9303624697472843,
+      "precision_cammeo": 0.8813559322033898,
+      "recall_cammeo": 0.9570552147239264,
+      "f1_cammeo": 0.9176470588235294,
+      "f1_macro": 0.9256481739615277,
+      "roc_auc": 0.9803286992739348,
+      "pr_auc": 0.9762957204127786,
+      "brier": 0.053841512728873726,
+      "costo_por_grano": 0.09186351706036745,
+      "matriz": {
+        "tn": 394,
+        "fp": 42,
+        "fn": 14,
+        "tp": 312
+      },
+      "metricas_umbral_0.5": {
+        "accuracy": 0.926509186351706,
+        "recall_cammeo": 0.9325153374233128,
+        "f1_macro": 0.925273185766321
+      }
+    }
+  },
+  "ruido": {
+    "baseline_trivial": {
+      "cv_entrenamiento": {
+        "f1_macro_media": 0.36393967471758504,
+        "f1_macro_desv": 0.0004181654334335654,
+        "accuracy_media": 0.5721785328657564,
+        "accuracy_desv": 0.001033659593561404,
+        "n_particiones": 10
+      },
+      "semillas_validacion": null
+    },
+    "regresion_logistica": {
+      "cv_entrenamiento": {
+        "f1_macro_media": 0.9297731978890373,
+        "f1_macro_desv": 0.0102054769987333,
+        "accuracy_media": 0.9313263833812696,
+        "accuracy_desv": 0.009963437123037796,
+        "n_particiones": 10
+      },
+      "semillas_validacion": null
+    },
+    "mlp_v1": {
+      "cv_entrenamiento": {
+        "f1_macro_media": 0.9246564317373039,
+        "f1_macro_desv": 0.010339351557065108,
+        "accuracy_media": 0.9265123790049019,
+        "accuracy_desv": 0.010035553390696086,
+        "n_particiones": 10
+      },
+      "semillas_validacion": {
+        "f1_macro_media": 0.9227519224346148,
+        "f1_macro_desv": 0.005426650233604113,
+        "semillas": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "mlp_v2": {
+      "cv_entrenamiento": {
+        "f1_macro_media": 0.9261907269791514,
+        "f1_macro_desv": 0.008766332994907105,
+        "accuracy_media": 0.9278252892893658,
+        "accuracy_desv": 0.008652143268247545,
+        "n_particiones": 10
+      },
+      "semillas_validacion": {
+        "f1_macro_media": 0.9237082904219356,
+        "f1_macro_desv": 0.008947810906641023,
+        "semillas": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    }
+  },
+  "mcnemar_validacion": {
+    "regresion_logistica_vs_mlp_v1": {
+      "a_acierta_b_falla": 4,
+      "b_acierta_a_falla": 1,
+      "p_valor": 0.375
+    },
+    "regresion_logistica_vs_mlp_v2": {
+      "a_acierta_b_falla": 8,
+      "b_acierta_a_falla": 2,
+      "p_valor": 0.109375
+    }
+  },
+  "prueba": {
+    "umbral": 0.49,
+    "accuracy": 0.9225721784776902,
+    "balanced_accuracy": 0.9234395227106433,
+    "precision_cammeo": 0.8938053097345132,
+    "recall_cammeo": 0.9294478527607362,
+    "f1_cammeo": 0.9112781954887218,
+    "f1_macro": 0.9212968393043144,
+    "roc_auc": 0.9760722125288456,
+    "pr_auc": 0.9683631681057578,
+    "brier": 0.05786660321283961,
+    "costo_por_grano": 0.10761154855643044,
+    "matriz": {
+      "tn": 400,
+      "fp": 36,
+      "fn": 23,
+      "tp": 303
+    }
+  },
+  "errores_prueba": {
+    "por_clase": {
+      "Osmancik": {
+        "n": 436,
+        "tasa_error": 0.08256880733944955
+      },
+      "Cammeo": {
+        "n": 326,
+        "tasa_error": 0.0705521472392638
+      }
+    },
+    "por_tamano": {
+      "pequeño": {
+        "n": 267,
+        "tasa_error": 0.0299625468164794
+      },
+      "mediano": {
+        "n": 235,
+        "tasa_error": 0.16595744680851063
+      },
+      "grande": {
+        "n": 260,
+        "tasa_error": 0.046153846153846156
+      }
+    }
+  },
+  "errores_validacion": {
+    "por_clase": {
+      "Osmancik": {
+        "n": 436,
+        "tasa_error": 0.06651376146788991
+      },
+      "Cammeo": {
+        "n": 326,
+        "tasa_error": 0.05521472392638037
+      }
+    },
+    "por_tamano": {
+      "pequeño": {
+        "n": 257,
+        "tasa_error": 0.023346303501945526
+      },
+      "mediano": {
+        "n": 264,
+        "tasa_error": 0.125
+      },
+      "grande": {
+        "n": 241,
+        "tasa_error": 0.03319502074688797
+      }
+    }
+  },
+  "calidad": {
+    "filas_iniciales": 3810,
+    "nulos": 0,
+    "duplicados": 0,
+    "incoherentes": 0,
+    "clases_invalidas": 0,
+    "filas_finales": 3810,
+    "distribucion_clases": {
+      "Osmancik": 2180,
+      "Cammeo": 1630
+    }
+  },
+  "particion": {
+    "entrenamiento": 2286,
+    "validacion": 762,
+    "prueba": 762
+  },
+  "rangos": {
+    "Area": [
+      7551.0,
+      18313.0
+    ],
+    "Perimeter": [
+      359.1000061035156,
+      548.4459838867188
+    ],
+    "Major_Axis_Length": [
+      145.26446533203125,
+      239.010498046875
+    ],
+    "Minor_Axis_Length": [
+      59.532405853271484,
+      106.33782196044922
+    ],
+    "Eccentricity": [
+      0.7772325873374939,
+      0.9450585842132568
+    ],
+    "Convex_Area": [
+      7723.0,
+      18724.0
+    ],
+    "Extent": [
+      0.49741286039352417,
+      0.8396612405776978
+    ]
+  },
+  "segundos": 5.6
+}
