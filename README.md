@@ -2,11 +2,12 @@
 
 Proyecto de evaluación parcial · **Tecnologías Emergentes (ISO46B)** · UNCP, Facultad de Ingeniería de Sistemas.
 Grupo: **02** — 
-integrantes: 
-DIAZ VEGA FABRIZIO E SAUL.
-TARMA CHANCO VANESSA
-TOMAS ALIAGA SEBASTIA
-GONZALES QUISPE JOCABED 
+integrantes:
+* Tarma Chanco Vanessa 
+* Diaz Vega Fabrizio E Saul 
+* Tomas Sebastian Vilchez Aliaga 
+* Gonzales Quispe Jocabed
+
 
 Sistema de punta a punta: datos → modelos (línea base, regresión logística y dos redes neuronales) → evaluación y versionado → **API Flask** → **chatbot** que la consume → pruebas con pytest.
 
