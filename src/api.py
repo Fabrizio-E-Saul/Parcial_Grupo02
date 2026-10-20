@@ -10,13 +10,14 @@ import joblib
 from flask import Flask, jsonify, request, send_from_directory
 
 from . import modelo as M
-from .datos import CLASES, COLUMNAS
+from .config import contactos_whatsapp
+from .datos import CLASES, COLUMNAS, rangos_dataset
 from .chatbot import Chatbot, SLOTS
 from .preprocesamiento_api import OBLIGATORIOS, UNIDADES, ErrorValidacion, a_dataframe, validar_entrada
 
 RAIZ = Path(__file__).resolve().parents[1]
 MARGEN_CONFIANZA = 0.15  
-MAX_SESIONES = 300       
+MAX_SESIONES = 300      
 TTL_SESION = 1800        
 
 
@@ -34,7 +35,11 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
     estado = cargar_promovida(directorio_modelos)  
     modelo, ficha, version = estado["modelo"], estado["ficha"], estado["version"]
     umbral = float(ficha["umbral_decision"])
-    rangos = ficha["rangos_entrada_entrenamiento"]
+    rangos_entrenamiento = ficha["rangos_entrada_entrenamiento"]
+    try:
+        rangos = rangos_dataset()          
+    except Exception:                      
+        rangos = rangos_entrenamiento
     mv = ficha["metricas_validacion"]
     desempeno = {"accuracy_validacion": round(mv["accuracy"], 4), "f1_macro_validacion": round(mv["f1_macro"], 4)}
 
@@ -49,13 +54,14 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
         return {
             "version": version, "umbral_decision": umbral, "desempeno": desempeno,
             "entrada": {"obligatorios": OBLIGATORIOS, "opcionales": ["Eccentricity"], "unidades": UNIDADES,
-                        "rangos_entrenamiento": rangos},
+                        "rangos_entrenamiento": rangos_entrenamiento, "rangos_dataset": rangos},
             "salida": {"clase": list(CLASES.values()), "probabilidad": "prob. de la clase predicha",
                        "probabilidad_cammeo": "prob. de Cammeo", "confianza": "alta | baja",
                        "version": "versión del modelo", "latencia_ms": "tiempo de cómputo"},
         }
 
     def ejecutar(payload) -> tuple[int, dict]:
+        """Lógica común de /predecir y del chat: valida y predice. Devuelve (status, json)."""
         t0 = time.perf_counter()
         try:
             valores = validar_entrada(payload, rangos)
@@ -95,8 +101,7 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
         def predecir(self, payload):
             return ejecutar(payload)
 
-    sesiones: dict[str, dict] = {}   # sid -> {"bot": Chatbot, "t": última actividad}; solo en memoria
-
+    sesiones: dict[str, dict] = {}   
     def _limpiar_sesiones():
         ahora = time.time()
         for sid in [k for k, v in sesiones.items() if ahora - v["t"] > TTL_SESION]:
@@ -114,6 +119,19 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
     @app.get("/")
     def interfaz():
         return send_from_directory(RAIZ / "src" / "web", "index.html")
+
+    @app.get("/img/<path:nombre>")
+    def imagen(nombre):
+        return send_from_directory(RAIZ / "src" / "web" / "img", nombre)
+
+    @app.get("/contactos")
+    def contactos():
+        return jsonify({"contactos": contactos_whatsapp()})
+
+    @app.delete("/chat/<sid>")
+    def borrar_chat(sid):
+        sesiones.pop(sid, None)
+        return jsonify({"borrado": True})
 
     @app.post("/chat")
     def chat():
@@ -137,6 +155,8 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
             "progreso": {"actual": len(bot.datos), "total": len(SLOTS)},
             "resultado": getattr(bot, "ultimo_resultado", None),
             "sugerencias": _sugerencias(bot),
+            "pendiente": bot.limites_pendiente(),
+            "contactos": bot.contactos,
         })
 
     @app.errorhandler(404)

@@ -4,15 +4,12 @@ from __future__ import annotations
 import re
 from urllib.parse import quote
 
-# ✏️ WHATSAPP DE LOS INTEGRANTES ---------------------------------------------------------------
-# Formato: código de país + número, solo dígitos (Perú = 51). Ej.: "51987654321".
-# Las filas con número incompleto (como "51XXXXXXXXX") se ignoran: no aparece ningún botón roto.
-# Ojo: si el repositorio de Git es público, estos números quedarán visibles para todos.
+
 INTEGRANTES = [
-    {"nombre": "Integrante 1", "whatsapp": "51XXXXXXXXX"},
-    {"nombre": "Integrante 2", "whatsapp": "51XXXXXXXXX"},
-    {"nombre": "Integrante 3", "whatsapp": "51XXXXXXXXX"},
-    {"nombre": "Integrante 4", "whatsapp": "51XXXXXXXXX"},
+    {"nombre": "Sebastian", "whatsapp": "51901967965"},
+    {"nombre": "Fabrizio", "whatsapp": "51901117357"},
+    {"nombre": "Jocabed", "whatsapp": "51977775442"},
+    {"nombre": "Vanessa", "whatsapp": "51926506042"},
 ]
 MENSAJE_WHATSAPP = "Hola {nombre}, usé el asistente de arroz (Cammeo / Osmancik) y necesito ayuda con un grano."
 

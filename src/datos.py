@@ -1,16 +1,8 @@
-"""E2 - Carga, limpieza y partición del dataset Rice (Cammeo / Osmancik).
 
-Decisiones (justificadas en el informe, sección 2):
-  * Los datos vienen de un .arff; la clase llega como bytes y se decodifica.
-  * Se verifican nulos, duplicados y coherencia geométrica; si algo falla
-    se ELIMINA la fila y se deja constancia en el reporte de calidad (no se imputa).
-  * La partición es estratificada y con semilla fija: 60 % entrenamiento,
-    20 % validación, 20 % prueba. El preprocesamiento (escalado) NO se ajusta aquí:
-    se ajusta dentro de la tubería solo con entrenamiento (ver modelo.py).
-"""
 from __future__ import annotations
 
 import hashlib
+import math
 from pathlib import Path
 
 import numpy as np
@@ -27,7 +19,6 @@ COLUMNAS = [
     "Eccentricity", "Convex_Area", "Extent",
 ]
 OBJETIVO = "Class"
-# Clase positiva = Cammeo (1). Osmancik = 0.
 CLASES = {0: "Osmancik", 1: "Cammeo"}
 
 
@@ -60,7 +51,6 @@ def limpiar(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     reporte["duplicados"] = int(df.duplicated().sum())
     df = df.drop_duplicates()
 
-    # Coherencia geométrica: lo que un grano real no puede incumplir.
     malas = (
         (df[COLUMNAS] <= 0).any(axis=1)
         | (df["Minor_Axis_Length"] > df["Major_Axis_Length"])
@@ -114,3 +104,17 @@ def comprobar_sin_fuga(p: dict) -> dict:
         return set(map(tuple, np.round(X.values, 6)))
     ent, val, pru = claves(p["X_ent"]), claves(p["X_val"]), claves(p["X_pru"])
     return {"ent_val": len(ent & val), "ent_pru": len(ent & pru), "val_pru": len(val & pru)}
+
+
+def rangos_dataset(ruta: Path | str = RUTA_ARFF, decimales: int = 3) -> dict:
+    """Mínimo y máximo de cada variable en TODO el dataset limpio (no solo el entrenamiento).
+
+    Se redondea hacia afuera a `decimales` para que los valores extremos reales sigan siendo
+    válidos. Los usa la API, el chatbot y la interfaz para no aceptar valores fuera de lo observado.
+    """
+    df, _ = limpiar(cargar_crudo(ruta))
+    f = 10 ** decimales
+    return {
+        c: [math.floor(round(float(df[c].min()) * f, 6)) / f, math.ceil(round(float(df[c].max()) * f, 6)) / f]
+        for c in COLUMNAS
+    }
