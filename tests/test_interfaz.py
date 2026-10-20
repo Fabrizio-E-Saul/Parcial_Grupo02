@@ -1,3 +1,4 @@
+
 import pytest
 
 
@@ -28,7 +29,7 @@ def test_conversacion_completa_por_la_interfaz_devuelve_resultado_estructurado(c
     for m in ["14162", "487,5", "205", "88", "14494", "0.65"]:
         j = _chat(cliente_api, m, sid).json
     assert j["resultado"]["clase"] == "Cammeo" and j["estado"] == "OTRO"
-    assert j["progreso"]["actual"] == 0          
+    assert j["progreso"]["actual"] == 0         
 
 
 def test_el_progreso_avanza_con_cada_medida(cliente_api):
@@ -43,7 +44,7 @@ def test_las_sesiones_son_independientes(cliente_api):
     b = _chat(cliente_api, "__nuevo__").json["sesion"]
     _chat(cliente_api, "sí", a); _chat(cliente_api, "14162", a)
     _chat(cliente_api, "sí", b)
-    assert _chat(cliente_api, "487", b).json["progreso"]["actual"] == 1   
+    assert _chat(cliente_api, "13000", b).json["progreso"]["actual"] == 1   
 
 
 def test_nueva_consulta_reinicia_la_sesion(cliente_api):
@@ -73,4 +74,51 @@ def test_el_html_no_inserta_texto_del_usuario_con_innerhtml():
     from pathlib import Path
     html = (Path(__file__).resolve().parents[1] / "src" / "web" / "index.html").read_text(encoding="utf-8")
     usos = [l for l in html.splitlines() if "innerHTML" in l]
-    assert all("vacio" in l for l in usos)     
+    assert all("vacio" in l for l in usos)       
+
+
+def test_el_chat_informa_los_limites_de_la_medida_pendiente(cliente_api):
+    sid = _chat(cliente_api, "__nuevo__").json["sesion"]
+    assert _chat(cliente_api, "sí", sid).json["pendiente"]["clave"] == "Area"
+    j = _chat(cliente_api, "14162", sid).json
+    assert j["pendiente"]["clave"] == "Perimeter" and j["pendiente"]["min"] < j["pendiente"]["max"]
+
+
+def test_borrar_historial_elimina_la_sesion(cliente_api):
+    sid = _chat(cliente_api, "__nuevo__").json["sesion"]
+    _chat(cliente_api, "sí", sid); _chat(cliente_api, "14162", sid)
+    assert cliente_api.delete(f"/chat/{sid}").json == {"borrado": True}
+    j = _chat(cliente_api, "hola", sid).json           
+    assert j["progreso"]["actual"] == 0 and j["estado"] == "INICIO"
+
+
+def test_borrar_una_sesion_inexistente_no_falla(cliente_api):
+    assert cliente_api.delete("/chat/no-existe-123").status_code == 200
+
+
+def test_contactos_whatsapp_solo_incluye_numeros_validos(cliente_api, monkeypatch):
+    from src import config
+    monkeypatch.setattr(config, "INTEGRANTES", [
+        {"nombre": "Ana", "whatsapp": "51987654321"}, {"nombre": "Pendiente", "whatsapp": "51XXXXXXXXX"}])
+    lista = cliente_api.get("/contactos").json["contactos"]
+    assert [c["nombre"] for c in lista] == ["Ana"] and lista[0]["url"].startswith("https://wa.me/51987654321")
+
+
+def test_derivar_a_persona_en_el_chat_devuelve_los_contactos(cliente_api, monkeypatch):
+    from src import config
+    monkeypatch.setattr(config, "INTEGRANTES", [{"nombre": "Ana", "whatsapp": "51987654321"}])
+    sid = _chat(cliente_api, "__nuevo__").json["sesion"]
+    j = _chat(cliente_api, "quiero hablar con una persona", sid).json
+    assert j["terminado"] and j["contactos"][0]["nombre"] == "Ana"
+    assert _chat(cliente_api, "__nuevo__", sid).json["contactos"] == []   
+
+def test_ruta_de_imagenes_responde_404_si_no_hay_archivo(cliente_api):
+    assert cliente_api.get("/img/no_existe.jpg").status_code == 404
+    assert cliente_api.get("/img/../api.py").status_code in (404, 308)    
+
+
+def test_el_html_tiene_botones_de_reinicio_y_borrado_y_resena():
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[1] / "src" / "web" / "index.html").read_text(encoding="utf-8")
+    for clave in ('id="btn-nuevo"', 'id="btn-borrar"', 'class="panel acerca"', "--foto-grupo", "/contactos", "/img/logo_fis.jpg", "/img/logo_uncp.png", "/img/grupo.jpg", "/img/arroz_", "fotoArroz"):
+        assert clave in html

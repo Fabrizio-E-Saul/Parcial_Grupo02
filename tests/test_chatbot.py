@@ -122,7 +122,7 @@ def test_un_acierto_reinicia_el_contador_de_fallos():
     bot = Chatbot(ClienteFalso([]))
     bot.procesar("hola"); bot.procesar("sí")
     bot.procesar("xx"); bot.procesar("yy")
-    bot.procesar("12000")           
+    bot.procesar("12000")          
     bot.procesar("xx"); bot.procesar("yy")
     assert bot.estado == "PIDIENDO"
 
@@ -166,7 +166,7 @@ def test_valor_fuera_de_rango_local_no_se_acepta():
     bot.procesar("hola"); bot.procesar("sí")
     for m in ["12000", "450", "190", "86", "12300"]:
         bot.procesar(m)
-    out = bot.procesar("5")         
+    out = bot.procesar("5")          
     assert "entre 0 y 1" in out and "Extent" not in bot.datos
 
 
@@ -183,7 +183,7 @@ def test_tres_rechazos_de_la_api_derivan():
     _llenar(bot)                                   
     bot.procesar("205"); bot.procesar("88")        
     bot.procesar("205")
-    out = bot.procesar("88")                      
+    out = bot.procesar("88")                       
     assert "persona" in out and bot.estado == "DERIVADO"
 
 
@@ -200,11 +200,88 @@ def test_mensaje_vacio_cuenta_como_fallo():
 
 def test_conversacion_terminada_no_sigue_respondiendo_datos():
     bot = Chatbot(ClienteFalso([]))
-    bot.procesar("no") 
+    bot.procesar("no")  # en INICIO: sale
     assert bot.terminado and "terminó" in bot.procesar("12000")
 
 
-def test_chatbot_con_api_real_rechaza_ejes_invertidos(cliente_api):
+def test_chatbot_con_api_real_rechaza_largo_fuera_del_rango_del_dataset(cliente_api):
     bot = Chatbot(ClienteFlask(cliente_api))
-    out = _llenar(bot, ["14162", "487", "88", "205", "14494", "0.65"])   
-    assert "problema con las medidas" in out
+    out = _llenar(bot, ["14162", "487", "88"])         
+    assert "entre 145.264 y 239.011" in out and "Major_Axis_Length" not in bot.datos
+
+
+def test_chatbot_con_api_real_el_area_convexa_no_puede_ser_menor_que_el_area(cliente_api):
+    bot = Chatbot(ClienteFlask(cliente_api))
+    out = _llenar(bot, ["14000", "487", "205", "88", "10000"])   
+    assert "no puede ser menor que el área" in out and "Convex_Area" not in bot.datos
+
+
+def test_chatbot_con_api_real_muestra_el_rango_en_cada_pregunta(cliente_api):
+    bot = Chatbot(ClienteFlask(cliente_api))
+    bot.procesar("hola")
+    assert "Rango: 7551 a 18913" in bot.procesar("sí")
+
+
+def test_chatbot_con_api_real_el_limite_exacto_del_dataset_se_acepta(cliente_api):
+    bot = Chatbot(ClienteFlask(cliente_api))
+    bot.procesar("hola"); bot.procesar("sí")
+    assert "(2/6)" in bot.procesar("7551") and bot.datos["Area"] == 7551.0
+    assert "problema" in bot.procesar("18914") or "entre" in bot.procesar("18914")   
+
+def test_ancho_mayor_que_el_largo_se_rechaza_sin_rangos():
+    bot = Chatbot(ClienteFalso([]))
+    bot.procesar("hola"); bot.procesar("sí")
+    for m in ["12000", "450", "100"]:
+        bot.procesar(m)
+    out = bot.procesar("150")                            
+    assert "no puede ser mayor que el largo" in out and "Minor_Axis_Length" not in bot.datos
+
+
+def test_area_convexa_menor_que_el_area_se_rechaza_sin_rangos():
+    bot = Chatbot(ClienteFalso([]))
+    bot.procesar("hola"); bot.procesar("sí")
+    for m in ["12000", "450", "190", "86"]:
+        bot.procesar(m)
+    out = bot.procesar("11000")
+    assert "no puede ser menor que el área" in out and "Convex_Area" not in bot.datos
+
+
+def test_limites_pendiente_para_la_interfaz(cliente_api):
+    bot = Chatbot(ClienteFlask(cliente_api))
+    assert bot.limites_pendiente() is None                
+    bot.procesar("hola"); bot.procesar("sí")
+    lim = bot.limites_pendiente()
+    assert lim["clave"] == "Area" and lim["min"] == 7551.0 and lim["max"] == 18913.0
+    for m in ["14162", "487", "205", "88"]:
+        bot.procesar(m)
+    assert bot.limites_pendiente()["min"] == 14162.0      
+
+
+def test_derivar_a_una_persona_entrega_los_whatsapp_configurados(monkeypatch):
+    from src import config
+    monkeypatch.setattr(config, "INTEGRANTES", [
+        {"nombre": "Ana", "whatsapp": "51 987 654 321"}, {"nombre": "Sin número", "whatsapp": "51XXXXXXXXX"}])
+    bot = Chatbot(ClienteFalso([]))
+    bot.procesar("hola")
+    bot.procesar("quiero hablar con una persona")
+    assert [c["nombre"] for c in bot.contactos] == ["Ana"]
+    assert bot.contactos[0]["url"].startswith("https://wa.me/51987654321?text=")
+
+
+def test_las_respuestas_del_bot_son_cortas(cliente_api):
+    bot = Chatbot(ClienteFlask(cliente_api))
+    textos = [bot.procesar("hola"), bot.procesar("sí")] + [bot.procesar(m) for m in MEDIDAS]
+    assert all(len(t) < 260 for t in textos)
+
+
+def test_grano_imposible_se_detecta_al_dar_el_ancho_y_se_vuelve_a_pedir(cliente_api):
+    bot = Chatbot(ClienteFlask(cliente_api))
+    out = _llenar(bot, ["15271", "454", "151.264", "59.532"])
+    assert "no pueden ser de un mismo grano" in out and "entre 6365 y 7426" in out
+    assert "(1/6)" in out and bot.datos == {}                  
+
+
+def test_medidas_coherentes_no_disparan_la_revision_de_coherencia():
+    bot = Chatbot(ClienteFalso([]))
+    out = _llenar(bot, ["12000", "450", "190", "86"])
+    assert "(5/6)" in out and "mismo grano" not in out

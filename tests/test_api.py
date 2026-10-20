@@ -23,7 +23,7 @@ def test_prediccion_exitosa_devuelve_clase_probabilidad_y_version(cliente_api, g
 
 def test_grano_grande_es_cammeo_y_pequeno_es_osmancik(cliente_api):
     cammeo = {"Area": 15500, "Perimeter": 520, "Major_Axis_Length": 225, "Minor_Axis_Length": 88,
-              "Convex_Area": 15900, "Extent": 0.62}
+            "Convex_Area": 15900, "Extent": 0.62}
     osmancik = {"Area": 10500, "Perimeter": 410, "Major_Axis_Length": 165, "Minor_Axis_Length": 82,
                 "Convex_Area": 10700, "Extent": 0.70}
     assert cliente_api.post("/predecir", json=cammeo).json["clase"] == "Cammeo"
@@ -82,6 +82,38 @@ def test_entradas_invalidas_dan_400_con_mensaje_claro(cliente_api, grano, cambio
     assert texto in " ".join(r.json["detalles"])
 
 
+def test_info_publica_los_rangos_del_dataset_completo(cliente_api):
+    r = cliente_api.get("/info").json["entrada"]["rangos_dataset"]
+    assert r["Area"] == [7551.0, 18913.0] and r["Extent"][0] == 0.497
+
+
+@pytest.mark.parametrize("cambio", [
+    {"Area": 7550, "Convex_Area": 7800},                 
+    {"Area": 18914, "Convex_Area": 19050},              
+    {"Perimeter": 600}, {"Major_Axis_Length": 140, "Minor_Axis_Length": 80},
+    {"Minor_Axis_Length": 108}, {"Extent": 0.49}, {"Extent": 0.9},
+])
+def test_valores_fuera_del_minimo_o_maximo_del_dataset_dan_400(cliente_api, grano, cambio):
+    r = cliente_api.post("/predecir", json={**grano, **cambio})
+    assert r.status_code == 400 and "fuera del rango del dataset" in " ".join(r.json["detalles"])
+
+
+def test_ningun_grano_real_del_dataset_es_rechazado():
+    """Los límites son estrictos pero no deben dejar fuera a ningún grano observado (extremos incluidos)."""
+    from src import datos as D
+    df, _ = D.limpiar(D.cargar_crudo())
+    rangos = D.rangos_dataset()
+    for fila in df[D.COLUMNAS].to_dict("records"):
+        validar_entrada(fila, rangos)
+
+
+def test_convex_area_menor_que_area_y_largo_menor_que_ancho_dan_400(cliente_api, grano):
+    a = cliente_api.post("/predecir", json={**grano, "Area": 14000, "Convex_Area": 13000})
+    b = cliente_api.post("/predecir", json={**grano, "Major_Axis_Length": 150, "Minor_Axis_Length": 160})
+    assert a.status_code == 400 and "Convex_Area" in " ".join(a.json["detalles"])
+    assert b.status_code == 400 and "ejes" in " ".join(b.json["detalles"])
+
+
 def test_json_roto_da_400(cliente_api):
     r = cliente_api.post("/predecir", data="esto no es json", content_type="application/json")
     assert r.status_code == 400 and "JSON" in r.json["error"]
@@ -106,3 +138,22 @@ def test_validar_entrada_junta_varios_errores():
     with pytest.raises(ErrorValidacion) as e:
         validar_entrada({"Area": "x"})
     assert len(e.value.mensajes) >= 2   
+
+
+CASO_IMPOSIBLE = {"Area": 15271, "Perimeter": 454, "Major_Axis_Length": 151.264,
+                  "Minor_Axis_Length": 59.532, "Convex_Area": 16371, "Extent": 0.68}
+
+
+def test_grano_imposible_aunque_cada_valor_este_en_rango_da_400_y_explica(cliente_api):
+    r = cliente_api.post("/predecir", json=CASO_IMPOSIBLE)
+    texto = " ".join(r.json["detalles"])
+    assert r.status_code == 400 and "no es coherente" in texto
+    assert "entre 6365 y 7426" in texto and "entre 330 y 399" in texto     
+
+
+def test_la_coherencia_acepta_los_ejemplos_de_la_interfaz(cliente_api):
+    for g in ({"Area": 15500, "Perimeter": 520, "Major_Axis_Length": 225, "Minor_Axis_Length": 88,
+               "Convex_Area": 15900, "Extent": 0.62},
+              {"Area": 10500, "Perimeter": 410, "Major_Axis_Length": 165, "Minor_Axis_Length": 82,
+               "Convex_Area": 10700, "Extent": 0.70}):
+        assert cliente_api.post("/predecir", json=g).status_code == 200
