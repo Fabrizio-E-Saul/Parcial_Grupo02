@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Asistente de acopio de arroz</title>
 <style>
+  /* =====================================================================================
+     🎨 COLORES Y FONDO — edita aquí.
+     · --verde / --verde-osc / --verde-cl: color principal de botones, burbujas y barras.
+     · --cammeo / --osmancik: colores de cada variedad en la tarjeta de resultado.
+     · --foto-grupo: foto de fondo. Guarda tu imagen en  src/web/img/grupo.jpg  y cambia
+       "none" por  url("/img/grupo.jpg")   (queda suave, detrás de todo).
+     El bloque de abajo (prefers-color-scheme: dark) son los mismos colores para modo oscuro.
+     ===================================================================================== */
   :root {
+    --foto-grupo:url("/img/centro.jpg");
     --fondo: #f3f1e8; --fondo2: #e6efe3; --tarjeta: #ffffff; --texto: #1f2a24; --suave: #5d6b63;
     --borde: #d9dfd6; --verde: #2f7d4f; --verde-osc: #225c3a; --verde-cl: #e3f2e8;
     --cammeo: #c4572b; --cammeo-cl: #fbe6dc; --osmancik: #2a6f97; --osmancik-cl: #dcecf6;
@@ -23,6 +32,7 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: var(--foto-grupo) center / cover no-repeat; opacity: .16; pointer-events: none; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--texto);
     background: linear-gradient(160deg, var(--fondo) 0%, var(--fondo2) 100%) fixed; min-height: 100vh;
@@ -30,7 +40,11 @@
   }
   .app { max-width: 920px; margin: 0 auto; }
   header { display: flex; align-items: center; gap: 14px; margin: 6px 0 14px; flex-wrap: wrap; }
-  .logo { width: 52px; height: 52px; border-radius: 16px; background: var(--verde); display: grid; place-items: center; box-shadow: var(--sombra); }
+  .logo-inst { height: 58px; min-width: 58px; border-radius: 16px; background: var(--verde); display: grid; place-items: center; box-shadow: var(--sombra); overflow: hidden; }
+  .logo-inst img { height: 58px; width: auto; max-width: 150px; object-fit: contain; display: block; }
+  .logo-inst.con-img { background: transparent; box-shadow: none; }
+  .logo-inst.con-img .icono-arroz { display: none; }
+  .logo-uncp { height: 58px; width: auto; max-width: 150px; object-fit: contain; }
   h1 { font-size: 1.35rem; margin: 0; line-height: 1.2; }
   .sub { color: var(--suave); font-size: .9rem; margin-top: 2px; }
   .pill { margin-left: auto; font-size: .8rem; padding: 6px 12px; border-radius: 999px; background: var(--tarjeta); border: 1px solid var(--borde); display: flex; align-items: center; gap: 7px; }
@@ -72,6 +86,28 @@
   .btn.sec { background: transparent; color: var(--verde); border: 1.5px solid var(--verde); }
   .btn.sec:hover { background: var(--verde-cl); }
 
+  .progreso { flex-wrap: wrap; }
+  .botones-chat { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .btn.mini { min-height: 34px; padding: 0 14px; font-size: .82rem; }
+  .btn.peligro { color: var(--error); border-color: var(--error); }
+  .btn.peligro:hover { background: var(--error-cl); }
+  .pista { padding: 0 18px 8px; font-size: .8rem; color: var(--suave); min-height: 1.3em; }
+  .pista.mal { color: var(--error); font-weight: 600; }
+  .separador { display: flex; align-items: center; gap: 10px; font-size: .78rem; color: var(--suave); margin: 6px 0; }
+  .separador::before, .separador::after { content: ""; flex: 1; height: 1px; background: var(--borde); }
+  .chat-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
+  @media (max-width: 860px) { .chat-grid { grid-template-columns: 1fr; } }
+  .acerca { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+  .acerca h2 { font-size: 1.1rem; margin: 0; }
+  .acerca p { margin: 0; font-size: .9rem; line-height: 1.5; }
+  .acerca .foto { width: 100%; max-height: 190px; object-fit: cover; border-radius: 14px; }
+  .contactos { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn.wa { background: #25d366; color: #073b1c; text-decoration: none; display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; font-size: .88rem; }
+  .btn.wa:hover { background: #1ebe5b; }
+  .campo .aviso { font-size: .78rem; color: var(--aviso); min-height: 1.1em; margin-top: 3px; }
+  .foto-arroz { width: 100%; max-height: 190px; object-fit: cover; border-radius: 12px; margin: 8px 0 10px; display: block; }
+  .campo .permitido { font-size: .76rem; color: var(--suave); }
+
   /* ---------- tarjeta de resultado ---------- */
   .resultado { border-radius: 16px; padding: 16px; border: 1.5px solid; width: min(100%, 460px); animation: entra .35s ease; }
   .resultado.cammeo { background: var(--cammeo-cl); border-color: var(--cammeo); }
@@ -110,14 +146,20 @@
 <body>
 <div class="app">
   <header>
-    <div class="logo" aria-hidden="true">
-      <svg width="34" height="34" viewBox="0 0 34 34"><ellipse cx="17" cy="17" rx="14" ry="6.5" transform="rotate(-35 17 17)" fill="#fff"/><ellipse cx="17" cy="17" rx="14" ry="6.5" transform="rotate(35 17 17)" fill="#ffffffaa"/></svg>
+    <!-- ✏️ LOGO FIS (arriba a la izquierda): guarda la imagen como src/web/img/logo_fis.jpg
+         Mientras no exista, se ve el ícono del arroz. -->
+    <div class="logo-inst" id="logo-fis">
+      <img src="/img/logo_fis.png" alt="Logo de la Facultad de Ingeniería de Sistemas, UNCP"
+           onload="this.parentNode.classList.add('con-img')" onerror="this.remove()">
+      <svg class="icono-arroz" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><ellipse cx="17" cy="17" rx="14" ry="6.5" transform="rotate(-35 17 17)" fill="#fff"/><ellipse cx="17" cy="17" rx="14" ry="6.5" transform="rotate(35 17 17)" fill="#ffffffaa"/></svg>
     </div>
     <div>
       <h1>Asistente de acopio de arroz</h1>
       <div class="sub">¿Cammeo u Osmancik? Dime las medidas del grano y te lo estimo.</div>
     </div>
     <div class="pill" id="estado-api" role="status"><span class="punto" id="punto"></span><span id="texto-api">Conectando…</span></div>
+    <!-- ✏️ LOGO UNCP (arriba a la derecha): guarda la imagen como src/web/img/logo_uncp.png -->
+    <img class="logo-uncp" src="/img/logo_uncp.png" alt="Logo de la Universidad Nacional del Centro del Perú" onerror="this.remove()">
   </header>
 
   <div class="tabs" role="tablist">
@@ -126,16 +168,36 @@
   </div>
 
   <!-- ===== CHAT ===== -->
-  <section class="panel" id="panel-chat" role="tabpanel">
-    <div class="progreso"><span id="prog-texto">Medidas 0/6</span><div class="barra"><i id="prog-barra"></i></div>
-      <button class="btn sec" id="btn-nuevo" style="min-height:34px;padding:0 14px;font-size:.82rem">Nueva consulta</button></div>
-    <div id="mensajes" aria-live="polite"></div>
-    <div class="chips" id="chips"></div>
-    <form class="entrada" id="form-chat" autocomplete="off">
-      <input id="texto" type="text" placeholder="Escribe aquí tu respuesta…" aria-label="Mensaje" maxlength="300">
-      <button class="btn" id="enviar" type="submit">Enviar</button>
-    </form>
-  </section>
+  <div class="chat-grid" id="panel-chat" role="tabpanel">
+    <section class="panel">
+      <div class="progreso"><span id="prog-texto">Medidas 0/6</span><div class="barra"><i id="prog-barra"></i></div>
+        <div class="botones-chat">
+          <button class="btn sec mini" id="btn-nuevo" type="button" title="Empieza una consulta nueva y deja el historial">Reiniciar</button>
+          <button class="btn sec mini peligro" id="btn-borrar" type="button" title="Borra todo el historial y empieza de cero">🗑️ Borrar historial</button>
+        </div></div>
+      <div id="mensajes" aria-live="polite"></div>
+      <div class="chips" id="chips"></div>
+      <div class="pista" id="pista"></div>
+      <form class="entrada" id="form-chat" autocomplete="off">
+        <input id="texto" type="text" placeholder="Escribe aquí tu respuesta…" aria-label="Mensaje" maxlength="300">
+        <button class="btn" id="enviar" type="submit">Enviar</button>
+      </form>
+    </section>
+
+    <!-- ✏️ RESEÑA / SALUDO AL PÚBLICO — edita libremente los textos de esta columna.
+         La foto del grupo: guarda src/web/img/grupo.jpg (si no existe, simplemente no se muestra). -->
+    <aside class="panel acerca" aria-label="Acerca del asistente">
+      <img class="foto" src="/img/grupo.png" alt="Foto del grupo" onerror="this.remove()">
+      <h2>¡Hola, qué gusto verte por aquí! 👋</h2>
+      <p>Somos el <b>Grupo XX</b> de Ingeniería de Sistemas de la UNCP. Hicimos este asistente en el curso de Tecnologías Emergentes pensando en quienes trabajan con arroz.</p>
+      <p><b>¿Para qué sirve?</b> Si me dices seis medidas de un grano (las sacas de su imagen), te cuento si probablemente es de la variedad <b>Cammeo</b> u <b>Osmancik</b> y qué tan segura es la respuesta.</p>
+      <p>Es una estimación basada solo en la forma del grano, así que no reemplaza un análisis de laboratorio. Y tranquilo: no guardamos tus datos.</p>
+      <div id="bloque-contactos" class="oculto">
+        <p><b>¿Prefieres hablar con una persona?</b> Escríbenos por WhatsApp:</p>
+        <div class="contactos" id="contactos-aside" style="margin-top:8px"></div>
+      </div>
+    </aside>
+  </div>
 
   <!-- ===== FORMULARIO ===== -->
   <section class="panel oculto" id="panel-form" role="tabpanel">
@@ -167,9 +229,9 @@ const $ = (id) => document.getElementById(id);
 const CAMPOS = [
   { k: "Area", n: "Área", ayuda: "píxeles que ocupa el grano", paso: 10, ej: [15500, 10500] },
   { k: "Perimeter", n: "Perímetro", ayuda: "largo del contorno (px)", paso: 1, ej: [520, 410] },
-  { k: "Major_Axis_Length", n: "Largo (eje mayor)", ayuda: "distancia más larga (px)", paso: 0.5, ej: [225, 165] },
-  { k: "Minor_Axis_Length", n: "Ancho (eje menor)", ayuda: "distancia más corta (px)", paso: 0.5, ej: [88, 82] },
-  { k: "Convex_Area", n: "Área convexa", ayuda: "área del contorno 'estirado' (px)", paso: 10, ej: [15900, 10700] },
+  { k: "Major_Axis_Length", n: "Largo (eje mayor)", ayuda: "distancia más larga (px) · nunca menor que el ancho", paso: 0.5, ej: [225, 165] },
+  { k: "Minor_Axis_Length", n: "Ancho (eje menor)", ayuda: "distancia más corta (px) · nunca mayor que el largo", paso: 0.5, ej: [88, 82] },
+  { k: "Convex_Area", n: "Área convexa", ayuda: "área del contorno 'estirado' (px) · nunca menor que el área", paso: 10, ej: [15900, 10700] },
   { k: "Extent", n: "Razón de ocupación", ayuda: "entre 0 y 1: grano / rectángulo que lo encierra", paso: 0.01, ej: [0.62, 0.70] },
 ];
 let rangos = null, sesion = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()).replace(/-/g, "");
@@ -193,7 +255,7 @@ async function estadoApi() {
     $("texto-api").textContent = "API activa · " + s.datos.version;
     const i = await pedir("/info");
     if (i.ok) {
-      rangos = i.datos.entrada.rangos_entrenamiento;
+      rangos = i.datos.entrada.rangos_dataset;   // mínimo y máximo de todo el dataset
       $("desempeno").textContent = "En nuestras pruebas acierta cerca de " + Math.round(i.datos.desempeno.accuracy_validacion * 100) + " de cada 100 granos.";
       construirCampos();
     }
@@ -208,6 +270,7 @@ function tarjetaResultado(r, dims) {
   const c = el("div", "resultado " + clase);
   c.appendChild(el("div", "etq", "Resultado"));
   c.appendChild(el("div", "nombre", "Arroz " + r.clase));
+  c.appendChild(fotoArroz(clase, !dims));
   c.appendChild(el("div", "", "Seguridad estimada: " + Math.round(r.probabilidad * 100) + " %"));
   const m = el("div", "medidor"); const aguja = el("div", "aguja"); const um = el("div", "umbral");
   um.style.left = (r.umbral * 100) + "%"; m.appendChild(um); m.appendChild(aguja); c.appendChild(m);
@@ -216,6 +279,18 @@ function tarjetaResultado(r, dims) {
   c.appendChild(el("span", "insignia " + r.confianza, r.confianza === "alta" ? "Confianza alta" : "Confianza baja: conviene revisar"));
   if (dims) c.appendChild(granoSvg(dims, clase));
   return c;
+}
+/* ✏️ FOTO DE CADA ARROZ en el resultado: guarda src/web/img/arroz_cammeo.jpg y src/web/img/arroz_osmancik.jpg
+   (también prueba .png y .webp). Si no existe la foto, en el chat se dibuja un grano de tamaño típico. */
+const TIPICO = { cammeo: { mayor: 205.5, menor: 88.8 }, osmancik: { mayor: 176.3, menor: 84.5 } };   // promedios del dataset
+function fotoArroz(clase, conRespaldo) {
+  const img = el("img", "foto-arroz"), exts = ["jpg", "png", "webp"], base = "/img/arroz_" + clase; let i = 0;
+  img.alt = "Grano de arroz " + clase; img.src = base + "." + exts[0];
+  img.onerror = () => {
+    if (++i < exts.length) { img.src = base + "." + exts[i]; return; }
+    if (conRespaldo && img.parentNode) img.replaceWith(granoSvg(TIPICO[clase], clase)); else img.remove();
+  };
+  return img;
 }
 function granoSvg(d, clase) {
   const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
@@ -231,6 +306,11 @@ function granoSvg(d, clase) {
 }
 
 /* ================= CHAT ================= */
+let modo = "texto", limites = null;   // modo "numero" cuando el bot pide una medida
+const caja = $("texto");
+const nuevoId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()).replace(/-/g, "");
+const num = (x) => Number(x).toLocaleString("en-US", { maximumFractionDigits: 3, useGrouping: false });
+
 function burbuja(texto, quien) {
   const fila = el("div", "fila " + quien);
   if (quien === "bot") fila.appendChild(el("div", "avatar", "🌾"));
@@ -245,6 +325,14 @@ function escribiendo(on) {
   const b = el("div", "burbuja"); const p = el("span", "escribiendo"); p.append(el("i"), el("i"), el("i")); b.appendChild(p); fila.appendChild(b);
   $("mensajes").appendChild(fila); bajar();
 }
+function botonesContacto(lista) {
+  const cont = el("div", "contactos");
+  (lista || []).forEach((c) => {
+    if (typeof c.url !== "string" || !c.url.startsWith("https://wa.me/")) return;
+    const a = el("a", "btn wa", "💬 " + c.nombre); a.href = c.url; a.target = "_blank"; a.rel = "noopener noreferrer"; cont.appendChild(a);
+  });
+  return cont;
+}
 function pintarChips(lista, terminado) {
   const c = $("chips"); c.textContent = "";
   (lista || []).forEach((t) => {
@@ -252,17 +340,58 @@ function pintarChips(lista, terminado) {
     b.addEventListener("click", () => enviar(t === "Nueva consulta" ? "__nuevo__" : t, t));
     c.appendChild(b);
   });
-  $("texto").disabled = !!terminado; $("enviar").disabled = !!terminado;
-  if (!terminado) $("texto").focus({ preventScroll: true });
+  caja.disabled = !!terminado; $("enviar").disabled = !!terminado;
+  if (!terminado) caja.focus({ preventScroll: true });
 }
 function pintarProgreso(p, estado) {
   const act = estado === "OTRO" ? p.total : p.actual;
   $("prog-texto").textContent = "Medidas " + act + "/" + p.total;
   $("prog-barra").style.width = (act / p.total * 100) + "%";
 }
-async function enviar(mensaje, visible) {
-  if (mensaje !== "__nuevo__") burbuja(visible || mensaje, "user"); else $("mensajes").textContent = "";
-  $("texto").value = ""; $("chips").textContent = ""; escribiendo(true);
+
+/* --- teclado restringido: números cuando el bot pide una medida; letras en el resto --- */
+function limpiarEntrada(v, m) {
+  if (m === "numero") {
+    let t = v.replace(/[^0-9.,]/g, "");
+    const i = t.search(/[.,]/);                       // un solo separador decimal
+    return i < 0 ? t : t.slice(0, i + 1) + t.slice(i + 1).replace(/[.,]/g, "");
+  }
+  return v.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s¿?¡!]/g, "");
+}
+function pistaBase() {
+  if (caja.disabled) return "";
+  if (modo === "numero") return limites && limites.min != null ? "Solo números · entre " + num(limites.min) + " y " + num(limites.max) : "Solo números";
+  return "Responde con letras (sí / no) o usa los botones.";
+}
+function pista(texto, mal) { const p = $("pista"); p.textContent = texto; p.classList.toggle("mal", !!mal); }
+function revisarNumero(esEnvio) {
+  if (modo !== "numero") return true;
+  const t = caja.value.trim(), n = parseFloat(t.replace(",", "."));
+  if (!t || Number.isNaN(n)) { pista(esEnvio ? "Escribe un número (solo dígitos y un punto o coma)." : pistaBase(), esEnvio); return false; }
+  if (limites && limites.min != null && (n < limites.min || n > limites.max)) {
+    pista("Debe estar entre " + num(limites.min) + " y " + num(limites.max) + ".", true); return false;
+  }
+  pista(pistaBase(), false); return true;
+}
+function aplicarModo(d) {
+  const pidiendo = d.estado === "PIDIENDO" && d.pendiente;
+  modo = pidiendo ? "numero" : "texto"; limites = pidiendo ? d.pendiente : null;
+  caja.inputMode = pidiendo ? "decimal" : "text";
+  caja.placeholder = pidiendo ? (limites.min != null ? "Número entre " + num(limites.min) + " y " + num(limites.max) : "Escribe un número…") : "Escribe sí o no…";
+  caja.value = ""; pista(pistaBase(), false);
+}
+caja.addEventListener("beforeinput", (ev) => { if (ev.data && limpiarEntrada(ev.data, modo) !== ev.data) ev.preventDefault(); });
+caja.addEventListener("input", () => {
+  const l = limpiarEntrada(caja.value, modo); if (l !== caja.value) caja.value = l;   // también filtra lo pegado
+  if (modo === "numero" && caja.value) revisarNumero(false); else pista(pistaBase(), false);
+});
+
+async function enviar(mensaje, visible, op) {
+  op = op || {};
+  if (mensaje !== "__nuevo__") burbuja(visible || mensaje, "user");
+  else if (op.limpiar) $("mensajes").textContent = "";
+  else if ($("mensajes").children.length) $("mensajes").appendChild(el("div", "separador", "Nueva consulta"));
+  caja.value = ""; $("chips").textContent = ""; escribiendo(true);
   const t0 = Date.now();
   let r;
   try { r = await post("/chat", { sesion: sesion, mensaje: mensaje }); }
@@ -273,36 +402,84 @@ async function enviar(mensaje, visible) {
   const d = r.datos; sesion = d.sesion;
   burbuja(d.respuesta, "bot");
   if (d.resultado) { const f = el("div", "fila bot"); f.appendChild(el("div", "avatar", "")); f.appendChild(tarjetaResultado(d.resultado)); $("mensajes").appendChild(f); bajar(); }
-  pintarProgreso(d.progreso, d.estado); pintarChips(d.sugerencias, d.terminado);
+  if (d.contactos && d.contactos.length) { const f = el("div", "fila bot"); f.appendChild(el("div", "avatar", "💬")); f.appendChild(botonesContacto(d.contactos)); $("mensajes").appendChild(f); bajar(); }
+  pintarProgreso(d.progreso, d.estado); pintarChips(d.sugerencias, d.terminado); aplicarModo(d);
 }
-$("form-chat").addEventListener("submit", (ev) => { ev.preventDefault(); const t = $("texto").value.trim(); if (t) enviar(t); });
+$("form-chat").addEventListener("submit", (ev) => {
+  ev.preventDefault(); const t = caja.value.trim();
+  if (!t || !revisarNumero(true)) return;
+  enviar(t);
+});
 $("btn-nuevo").addEventListener("click", () => enviar("__nuevo__"));
+$("btn-borrar").addEventListener("click", async () => {
+  if (!window.confirm("¿Borrar todo el historial de esta conversación y empezar de cero?")) return;
+  try { await fetch("/chat/" + encodeURIComponent(sesion), { method: "DELETE" }); } catch (e) { /* sin conexión: igual se limpia la pantalla */ }
+  sesion = nuevoId(); enviar("__nuevo__", null, { limpiar: true });
+});
+async function cargarContactos() {
+  try {
+    const r = await pedir("/contactos");
+    const lista = (r.ok && r.datos.contactos) || [];
+    if (!lista.length) return;
+    $("contactos-aside").appendChild(botonesContacto(lista)); $("bloque-contactos").classList.remove("oculto");
+  } catch (e) { /* sin contactos: la reseña queda sin esa sección */ }
+}
 
 /* ================= FORMULARIO ================= */
 const valores = {};
+/* Reglas: cada medida entre el mínimo y máximo del dataset; área convexa >= área; ancho <= largo. */
+function limitesCampo(k) {
+  let [lo, hi] = rangos[k];
+  if (k === "Convex_Area") lo = Math.max(lo, valores.Area);
+  if (k === "Minor_Axis_Length") hi = Math.min(hi, valores.Major_Axis_Length);
+  return [lo, hi];
+}
+function pintar(k, saltarTexto) {
+  const c = $("campo-" + k), [lo, hi] = limitesCampo(k);
+  const r = c.querySelector("input[type=range]"), t = c.querySelector("input[type=text]");
+  r.min = lo; r.max = hi; r.value = valores[k];
+  if (!saltarTexto) t.value = num(valores[k]);
+  c.querySelector(".permitido").textContent = "Permitido: " + num(lo) + " a " + num(hi);
+}
+function avisoCampo(k, texto) { const c = $("campo-" + k); if (c) c.querySelector(".aviso").textContent = texto || ""; }
+function reajustar() {   // si cambia el área o el largo, empuja a la convexa / al ancho para no romper las reglas
+  if (valores.Convex_Area < valores.Area) { valores.Convex_Area = valores.Area; avisoCampo("Convex_Area", "Subió: no puede ser menor que el área."); }
+  if (valores.Minor_Axis_Length > valores.Major_Axis_Length) { valores.Minor_Axis_Length = valores.Major_Axis_Length; avisoCampo("Minor_Axis_Length", "Bajó: no puede ser mayor que el largo."); }
+  CAMPOS.forEach((c) => pintar(c.k));
+}
+function fijar(k, v) {   // recorta al rango permitido
+  const [lo, hi] = limitesCampo(k);
+  const w = Number.isNaN(v) ? valores[k] : Math.min(Math.max(v, lo), hi);
+  avisoCampo(k, w !== v ? "Ajustado al rango permitido (" + num(lo) + " a " + num(hi) + ")." : "");
+  valores[k] = w; reajustar();
+}
 function construirCampos() {
   const cont = $("campos"); cont.textContent = "";
   CAMPOS.forEach((c) => {
     const lo = rangos[c.k][0], hi = rangos[c.k][1];
     const caja = el("div", "campo"); caja.id = "campo-" + c.k;
-    const lab = el("label"); lab.appendChild(el("span", "", c.n)); caja.appendChild(lab);
+    const lab = el("label"); lab.appendChild(el("span", "", c.n)); lab.appendChild(el("span", "permitido")); caja.appendChild(lab);
     caja.appendChild(el("small", "", c.ayuda));
     const par = el("div", "par");
     const rango = el("input"); rango.type = "range"; rango.min = lo; rango.max = hi; rango.step = c.paso; rango.setAttribute("aria-label", c.n);
-    const num = el("input"); num.type = "number"; num.step = "any"; num.setAttribute("aria-label", c.n + " (valor)");
-    const medio = c.k === "Extent" ? (lo + hi) / 2 : Math.round((lo + hi) / 2); rango.value = medio; num.value = medio; valores[c.k] = medio;
-    rango.addEventListener("input", () => { num.value = rango.value; valores[c.k] = parseFloat(rango.value); caja.classList.remove("malo"); });
-    num.addEventListener("input", () => { rango.value = num.value; valores[c.k] = parseFloat(num.value); caja.classList.remove("malo"); });
-    par.append(rango, num); caja.appendChild(par); cont.appendChild(caja);
+    const txt = el("input"); txt.type = "text"; txt.inputMode = "decimal"; txt.autocomplete = "off"; txt.setAttribute("aria-label", c.n + " (valor)");
+    valores[c.k] = c.ej[1];   // arranca con un ejemplo real (Osmancik): los puntos medios de cada rango no forman un grano posible
+    rango.addEventListener("input", () => { avisoCampo(c.k, ""); valores[c.k] = parseFloat(rango.value); caja.classList.remove("malo"); reajustar(); });
+    txt.addEventListener("beforeinput", (ev) => { if (ev.data && limpiarEntrada(ev.data, "numero") !== ev.data) ev.preventDefault(); });
+    txt.addEventListener("input", () => {            // solo dígitos y un separador; el recorte al rango se hace al salir del campo
+      const l = limpiarEntrada(txt.value, "numero"); if (l !== txt.value) txt.value = l;
+      const n = parseFloat(l.replace(",", ".")); caja.classList.remove("malo"); avisoCampo(c.k, "");
+      if (!Number.isNaN(n)) { valores[c.k] = n; const [a, b] = limitesCampo(c.k); if (n >= a && n <= b) rango.value = n; }
+    });
+    txt.addEventListener("change", () => fijar(c.k, parseFloat(txt.value.replace(",", "."))));
+    par.append(rango, txt); caja.appendChild(par); caja.appendChild(el("div", "aviso")); cont.appendChild(caja);
   });
+  reajustar();
+  CAMPOS.forEach((c) => avisoCampo(c.k, ""));
 }
 function poner(indice) {
-  CAMPOS.forEach((c) => {
-    const caja = $("campo-" + c.k); if (!caja) return;
-    const v = c.ej[indice]; valores[c.k] = v;
-    caja.querySelectorAll("input").forEach((i) => { i.value = v; }); caja.classList.remove("malo");
-  });
-  clasificar();
+  CAMPOS.forEach((c) => { valores[c.k] = c.ej[indice]; avisoCampo(c.k, ""); const caja = $("campo-" + c.k); if (caja) caja.classList.remove("malo"); });
+  reajustar(); clasificar();
 }
 async function clasificar() {
   const lado = $("lado-resultado"); lado.textContent = "";
@@ -311,7 +488,7 @@ async function clasificar() {
   if (r.ok) { lado.appendChild(tarjetaResultado(r.datos, { mayor: valores.Major_Axis_Length, menor: valores.Minor_Axis_Length })); return; }
   const caja = el("div", "errores"); caja.appendChild(el("b", "", "Revisa las medidas:"));
   const ul = el("ul"); (r.datos.detalles || [r.datos.error || "Error inesperado."]).forEach((m) => {
-    ul.appendChild(el("li", "", m));
+    ul.appendChild(el("li", "", m.replace(/'(\w+)'/g, (x, k) => { const f = CAMPOS.find((c) => c.k === k); return f ? f.n : x; })));
     (m.match(/'(\w+)'/g) || []).forEach((q) => { const c = $("campo-" + q.replace(/'/g, "")); if (c) c.classList.add("malo"); });
   });
   caja.appendChild(ul); lado.appendChild(caja);
@@ -331,6 +508,7 @@ $("tab-chat").addEventListener("click", () => pestana("chat"));
 $("tab-form").addEventListener("click", () => pestana("form"));
 
 estadoApi();
+cargarContactos();
 enviar("__nuevo__");
 </script>
 </body>
