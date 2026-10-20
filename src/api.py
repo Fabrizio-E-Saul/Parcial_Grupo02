@@ -1,4 +1,21 @@
+"""E5 - API Flask que sirve la versión PROMOVIDA del modelo.
 
+Endpoints
+  GET  /salud     -> estado del servicio y versión cargada
+  GET  /info      -> contrato de entrada/salida y rangos plausibles
+  POST /predecir  -> {clase, probabilidad, probabilidad_cammeo, confianza, version, umbral, latencia_ms}
+
+  GET  /          -> interfaz web (chat + formulario)       [src/web/index.html]
+  POST /chat      -> conversación del chatbot para la interfaz web (sesiones en memoria)
+  DELETE /chat/<sesion> -> borra el historial (la sesión) de esa conversación
+  GET  /contactos -> WhatsApp de los integrantes (ver src/config.py)
+  GET  /img/<archivo> -> imágenes de la interfaz (foto del grupo) en src/web/img/
+
+Errores: 400 con {"error": ..., "detalles": [...]} para entradas inválidas o JSON roto.
+El modelo se carga UNA vez al crear la app (no en cada solicitud): evita leer disco y
+deserializar en cada petición.
+Ejecutar:  python -m src.api   (puerto 5000)
+"""
 from __future__ import annotations
 
 import json
@@ -10,14 +27,15 @@ import joblib
 from flask import Flask, jsonify, request, send_from_directory
 
 from . import modelo as M
-from .datos import CLASES, COLUMNAS
+from .config import contactos_whatsapp
+from .datos import CLASES, COLUMNAS, rangos_dataset
 from .chatbot import Chatbot, SLOTS
 from .preprocesamiento_api import OBLIGATORIOS, UNIDADES, ErrorValidacion, a_dataframe, validar_entrada
 
 RAIZ = Path(__file__).resolve().parents[1]
-MARGEN_CONFIANZA = 0.15  
-MAX_SESIONES = 300       
-TTL_SESION = 1800        
+MARGEN_CONFIANZA = 0.15  # |p - umbral| menor que esto => confianza "baja"
+MAX_SESIONES = 300       # sesiones de chat en memoria (se descartan las más antiguas)
+TTL_SESION = 1800        # segundos de inactividad antes de olvidar una conversación
 
 
 def cargar_promovida(directorio: Path | str | None = None) -> dict:
@@ -31,10 +49,14 @@ def cargar_promovida(directorio: Path | str | None = None) -> dict:
 def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
     app = Flask(__name__)
     app.json.ensure_ascii = False
-    estado = cargar_promovida(directorio_modelos)  
+    estado = cargar_promovida(directorio_modelos)  # carga única al arrancar
     modelo, ficha, version = estado["modelo"], estado["ficha"], estado["version"]
     umbral = float(ficha["umbral_decision"])
-    rangos = ficha["rangos_entrada_entrenamiento"]
+    rangos_entrenamiento = ficha["rangos_entrada_entrenamiento"]
+    try:
+        rangos = rangos_dataset()          # mínimo y máximo de TODO el dataset: límites estrictos de entrada
+    except Exception:                      # pragma: no cover - si faltara el .arff, se usa la ficha
+        rangos = rangos_entrenamiento
     mv = ficha["metricas_validacion"]
     desempeno = {"accuracy_validacion": round(mv["accuracy"], 4), "f1_macro_validacion": round(mv["f1_macro"], 4)}
 
@@ -49,13 +71,14 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
         return {
             "version": version, "umbral_decision": umbral, "desempeno": desempeno,
             "entrada": {"obligatorios": OBLIGATORIOS, "opcionales": ["Eccentricity"], "unidades": UNIDADES,
-                        "rangos_entrenamiento": rangos},
+                        "rangos_entrenamiento": rangos_entrenamiento, "rangos_dataset": rangos},
             "salida": {"clase": list(CLASES.values()), "probabilidad": "prob. de la clase predicha",
                        "probabilidad_cammeo": "prob. de Cammeo", "confianza": "alta | baja",
                        "version": "versión del modelo", "latencia_ms": "tiempo de cómputo"},
         }
 
     def ejecutar(payload) -> tuple[int, dict]:
+        """Lógica común de /predecir y del chat: valida y predice. Devuelve (status, json)."""
         t0 = time.perf_counter()
         try:
             valores = validar_entrada(payload, rangos)
@@ -88,7 +111,9 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
             r.headers["X-Latencia-ms"] = str(resp["latencia_ms"])
         return r
 
+    # ---------------------------------------------------------------- interfaz web
     class ClienteInterno:
+        """Cliente del chatbot que llama a la lógica de la API en el mismo proceso (sin red)."""
         def info(self):
             return 200, info_dict()
 
@@ -115,6 +140,19 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
     def interfaz():
         return send_from_directory(RAIZ / "src" / "web", "index.html")
 
+    @app.get("/img/<path:nombre>")
+    def imagen(nombre):
+        return send_from_directory(RAIZ / "src" / "web" / "img", nombre)
+
+    @app.get("/contactos")
+    def contactos():
+        return jsonify({"contactos": contactos_whatsapp()})
+
+    @app.delete("/chat/<sid>")
+    def borrar_chat(sid):
+        sesiones.pop(sid, None)
+        return jsonify({"borrado": True})
+
     @app.post("/chat")
     def chat():
         datos = request.get_json(silent=True)
@@ -137,6 +175,8 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
             "progreso": {"actual": len(bot.datos), "total": len(SLOTS)},
             "resultado": getattr(bot, "ultimo_resultado", None),
             "sugerencias": _sugerencias(bot),
+            "pendiente": bot.limites_pendiente(),
+            "contactos": bot.contactos,
         })
 
     @app.errorhandler(404)
@@ -150,5 +190,5 @@ def crear_app(directorio_modelos: Path | str | None = None) -> Flask:
     return app
 
 
-if __name__ == "__main__":  
+if __name__ == "__main__":  # pragma: no cover
     crear_app().run(host="127.0.0.1", port=5000)

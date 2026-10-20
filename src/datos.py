@@ -11,6 +11,7 @@ Decisiones (justificadas en el informe, sección 2):
 from __future__ import annotations
 
 import hashlib
+import math
 from pathlib import Path
 
 import numpy as np
@@ -114,3 +115,17 @@ def comprobar_sin_fuga(p: dict) -> dict:
         return set(map(tuple, np.round(X.values, 6)))
     ent, val, pru = claves(p["X_ent"]), claves(p["X_val"]), claves(p["X_pru"])
     return {"ent_val": len(ent & val), "ent_pru": len(ent & pru), "val_pru": len(val & pru)}
+
+
+def rangos_dataset(ruta: Path | str = RUTA_ARFF, decimales: int = 3) -> dict:
+    """Mínimo y máximo de cada variable en TODO el dataset limpio (no solo el entrenamiento).
+
+    Se redondea hacia afuera a `decimales` para que los valores extremos reales sigan siendo
+    válidos. Los usa la API, el chatbot y la interfaz para no aceptar valores fuera de lo observado.
+    """
+    df, _ = limpiar(cargar_crudo(ruta))
+    f = 10 ** decimales
+    return {
+        c: [math.floor(round(float(df[c].min()) * f, 6)) / f, math.ceil(round(float(df[c].max()) * f, 6)) / f]
+        for c in COLUMNAS
+    }
